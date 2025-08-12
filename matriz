@@ -1,0 +1,28 @@
+#include <stdio.h>
+
+#define MAX_VERTICES 4
+
+int main(void)
+{
+    int mat[MAX_VERTICES][MAX_VERTICES] = {
+        {0, 1, 1, 0},
+        {1, 0, 1, 1},
+        {1, 1, 0, 1},
+        {0, 1, 1, 0}
+    };
+
+    int i, j;
+
+    for (i = 0; i < MAX_VERTICES; i++)
+    {
+        printf("Adjacentes do vértice %d: ", i + 1);
+        for (j = 0; j < MAX_VERTICES; j++)
+        {
+            if (mat[i][j] != 0)
+                printf("%d ", j + 1);
+        }
+        printf("\n");
+    }
+
+    return 0;
+}
