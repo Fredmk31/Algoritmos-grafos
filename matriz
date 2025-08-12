@@ -2,7 +2,7 @@
 
 #define MAX_VERTICES 4
 
-int main(void)
+void main()
 {
     int mat[MAX_VERTICES][MAX_VERTICES] = {
         {0, 1, 1, 0},
@@ -23,6 +23,4 @@ int main(void)
         }
         printf("\n");
     }
-
-    return 0;
 }
