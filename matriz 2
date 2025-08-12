@@ -1,0 +1,30 @@
+#include <stdio.h>
+
+#define MAX_VERTICE 4
+#define MAX_ARESTAS 6
+
+void main()
+{
+    int mat[MAX_VERTICE][MAX_ARESTAS] = {
+        {1, 1, 0, 0, 0, 0},
+        {1, 0, 1, 0, 0, 1},
+        {0, 1, 1, 1, 0, 0},
+        {0, 0, 0, 1, 2, 1}
+    };
+
+    char arestas[MAX_ARESTAS] = {'A', 'B', 'C', 'D', 'E', 'F'};
+    int i, j;
+
+    for (j = 0; j < MAX_ARESTAS; j++)
+    {
+        printf("A aresta %c conecta os vértices: ", arestas[j]);
+        for (i = 0; i < MAX_VERTICE; i++)
+        {
+            if (mat[i][j] != 0)
+            {
+                printf("%d ", i + 1);
+            }
+        }
+        printf("\n");
+    }
+}
