@@ -15,16 +15,17 @@ CREATE TABLE IF NOT EXISTS alunos (
 conn.commit()
 
 # Funções
-def calcular_situacao(nota):
-    return "Aprovado" if nota >= 6 else "Reprovado"
-
 def cadastrar():
-    m, n, nota = entry_matricula.get(), entry_nome.get(), entry_nota.get()
+    m = entry_matricula.get()
+    n = entry_nome.get()
+    nota = entry_nota.get()
+
     if not (m and n and nota):
         messagebox.showwarning("Atenção", "Preencha todos os campos!")
         return
+
     try:
-        cursor.execute("INSERT INTO alunos VALUES (?, ?, ?)", (m, n, float(nota)))
+        cursor.execute("INSERT INTO alunos (matricula, nome, nota) VALUES (?, ?, ?)", (m, n, float(nota)))
         conn.commit()
         messagebox.showinfo("Sucesso", "Aluno cadastrado!")
         limpar_campos()
@@ -35,16 +36,21 @@ def cadastrar():
         messagebox.showerror("Erro", "Nota inválida.")
 
 def atualizar():
-    m, nova_nota = entry_matricula.get(), entry_nota.get()
+    m = entry_matricula.get()
+    nova_nota = entry_nota.get()
+
     if not (m and nova_nota):
         messagebox.showwarning("Atenção", "Preencha matrícula e nova nota.")
         return
     try:
         cursor.execute("UPDATE alunos SET nota = ? WHERE matricula = ?", (float(nova_nota), m))
-        conn.commit()
-        messagebox.showinfo("Sucesso", "Nota atualizada!")
-        limpar_campos()
-        atualizar_tabela()
+        if cursor.rowcount == 0:
+            messagebox.showinfo("Info", "Aluno não encontrado.")
+        else:
+            conn.commit()
+            messagebox.showinfo("Sucesso", "Nota atualizada!")
+            limpar_campos()
+            atualizar_tabela()
     except ValueError:
         messagebox.showerror("Erro", "Nota inválida.")
 
@@ -54,10 +60,13 @@ def deletar():
         messagebox.showwarning("Atenção", "Informe a matrícula.")
         return
     cursor.execute("DELETE FROM alunos WHERE matricula = ?", (m,))
-    conn.commit()
-    messagebox.showinfo("Sucesso", "Aluno deletado!")
-    limpar_campos()
-    atualizar_tabela()
+    if cursor.rowcount == 0:
+        messagebox.showinfo("Info", "Aluno não encontrado.")
+    else:
+        conn.commit()
+        messagebox.showinfo("Sucesso", "Aluno deletado!")
+        limpar_campos()
+        atualizar_tabela()
 
 def limpar_campos():
     entry_matricula.delete(0, tk.END)
@@ -69,79 +78,45 @@ def atualizar_tabela():
         tree.delete(row)
 
     cursor.execute("SELECT * FROM alunos")
-    for i, (m, n, nota) in enumerate(cursor.fetchall()):
-        situacao = calcular_situacao(nota)
-        tree.insert("", "end", values=(m, n, nota, situacao), tags=("oddrow" if i % 2 else "evenrow"))
-    tree.tag_configure("oddrow", background="#E8E8E8")
-    tree.tag_configure("evenrow", background="#FFFFFF")
+    for m, n, nota in cursor.fetchall():
+        tree.insert("", "end", values=(m, n, nota))
 
-# Estilização da janela
+# Janela
 janela = tk.Tk()
-janela.title("Cadastro de Alunos - Situação")
-janela.geometry("650x500")
-janela.configure(bg="#f5f5f5")
+janela.title("Cadastro de Alunos")
+janela.geometry("500x400")
 
-# Configuração de estilos
-style = ttk.Style()
-style.configure("Treeview", font=("Raleway", 12), rowheight=25)
-style.configure("Treeview.Heading", font=("Montserrat", 14, "bold"))
-style.configure("TButton", font=("Raleway", 12), background="#4CAF50", padding=6)
+# Entradas
+tk.Label(janela, text="Matrícula:").pack()
+entry_matricula = tk.Entry(janela)
+entry_matricula.pack()
 
-# Criar um frame estilizado
-frame = tk.Frame(janela, bg="#ffffff", padx=10, pady=10, relief="solid", bd=2)
-frame.pack(pady=10, fill="both")
+tk.Label(janela, text="Nome:").pack()
+entry_nome = tk.Entry(janela)
+entry_nome.pack()
 
-tk.Label(frame, text="Matrícula:", font=("Raleway", 12)).grid(row=0, column=0, sticky="w", padx=5)
-entry_matricula = tk.Entry(frame, font=("Raleway", 12))
-entry_matricula.grid(row=0, column=1)
+tk.Label(janela, text="Nota:").pack()
+entry_nota = tk.Entry(janela)
+entry_nota.pack()
 
-tk.Label(frame, text="Nome:", font=("Raleway", 12)).grid(row=1, column=0, sticky="w", padx=5)
-entry_nome = tk.Entry(frame, font=("Raleway", 12))
-entry_nome.grid(row=1, column=1)
+# Botões
+tk.Button(janela, text="Cadastrar", command=cadastrar).pack(pady=5)
+tk.Button(janela, text="Atualizar Nota", command=atualizar).pack(pady=5)
+tk.Button(janela, text="Deletar", command=deletar).pack(pady=5)
 
-tk.Label(frame, text="Nota:", font=("Raleway", 12)).grid(row=2, column=0, sticky="w", padx=5)
-entry_nota = tk.Entry(frame, font=("Raleway", 12))
-entry_nota.grid(row=2, column=1)
+# Tabela simples
+tree = ttk.Treeview(janela, columns=("matricula", "nome", "nota"), show="headings")
+tree.heading("matricula", text="Matrícula")
+tree.heading("nome", text="Nome")
+tree.heading("nota", text="Nota")
+tree.pack(fill="both", expand=True, pady=10)
 
-# Botões estilizados
-btn_frame = tk.Frame(janela, bg="#f5f5f5")
-btn_frame.pack(pady=5, fill="x")
-
-def hover(event, btn, color):
-    btn.config(bg=color)
-
-btn_cadastrar = tk.Button(btn_frame, text="Cadastrar", font=("Raleway", 12), bg="#4CAF50", fg="white", relief="flat", command=cadastrar)
-btn_cadastrar.pack(side="left", padx=5)
-btn_cadastrar.bind("<Enter>", lambda e: hover(e, btn_cadastrar, "#45A049"))
-btn_cadastrar.bind("<Leave>", lambda e: hover(e, btn_cadastrar, "#4CAF50"))
-
-btn_atualizar = tk.Button(btn_frame, text="Atualizar Nota", font=("Raleway", 12), bg="#FFC107", fg="black", relief="flat", command=atualizar)
-btn_atualizar.pack(side="left", padx=5)
-btn_atualizar.bind("<Enter>", lambda e: hover(e, btn_atualizar, "#E0A800"))
-btn_atualizar.bind("<Leave>", lambda e: hover(e, btn_atualizar, "#FFC107"))
-
-btn_deletar = tk.Button(btn_frame, text="Deletar", font=("Raleway", 12), bg="#F44336", fg="white", relief="flat", command=deletar)
-btn_deletar.pack(side="left", padx=5)
-btn_deletar.bind("<Enter>", lambda e: hover(e, btn_deletar, "#D32F2F"))
-btn_deletar.bind("<Leave>", lambda e: hover(e, btn_deletar, "#F44336"))
-
-# Tabela estilizada
-tree_frame = tk.Frame(janela)
-tree_frame.pack(fill="both", expand=True, pady=10)
-
-tree = ttk.Treeview(tree_frame, columns=("matricula", "nome", "nota", "situacao"), show="headings", height=8)
-tree.heading("matricula", text="Matrícula", anchor="center")
-tree.heading("nome", text="Nome", anchor="center")
-tree.heading("nota", text="Nota", anchor="center")
-tree.heading("situacao", text="Situação", anchor="center")
-
-tree.pack(fill="both", expand=True, pady=5)
-
-# Atualiza tabela ao iniciar
+# Atualiza automaticamente
 atualizar_tabela()
 
-# Iniciar aplicativo
+# Iniciar app
 janela.mainloop()
 
 # Fecha banco
 conn.close()
+
